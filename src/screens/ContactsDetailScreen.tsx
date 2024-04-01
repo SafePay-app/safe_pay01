@@ -5,6 +5,7 @@ import { RouteProp } from '@react-navigation/native';
 import { NavigationProp } from '@react-navigation/native';
 import { RootStackParamList } from './RootStackParamList'; // Assuming you have a RootStackParamList type
 
+
 type ContactDetailScreenRouteProp = RouteProp<RootStackParamList, 'ContactsDetail'>;
 
 type ContactDetailProps = {
@@ -58,18 +59,30 @@ const ContactsDetailScreen: React.FC<ContactDetailProps> = ({ route, navigation 
     return address.length > maxLength ? `${address.substring(0, maxLength)}...` : address;
   };
 
+  const formatPhoneNumber = (rawNumber: string) => {
+    const cleaned = ('' + rawNumber).replace(/\D/g, '');
+    const match = cleaned.match(/^(\d{3})(\d{3})(\d{4})$/);
+    if (match) {
+      return `(${match[1]}) ${match[2]}-${match[3]}`;
+    }
+    return rawNumber; // Return the original number if it doesn't match the expected format
+  };
+  
   return (
     <ScrollView style={styles.container}>
-      <ImageBackground
-        source={contact.thumbnailPath ? { uri: contact.thumbnailPath } : require('../assets/Phantom.png')}
-        style={styles.backgroundImage}
-      >
-        {/* İsim ve soyisim kısmını birleştir ve fotoğrafın altına taşı */}
-        <Text style={styles.name}>{`${contact.givenName} ${contact.familyName}`}</Text>
-        <TouchableOpacity style={styles.favoriteButton}>
-          <Image source={require('../assets/favoritee.png')} style={styles.favoriteIcon} />
-        </TouchableOpacity>
-      </ImageBackground>
+     <View>
+        <Image
+           style={styles.backgroundImage}
+           source={contact.thumbnailPath ? { uri: contact.thumbnailPath } : require('../assets/Phantom.png')}
+        />
+     </View>
+    <Text style={styles.name}>{`${contact.givenName} ${contact.familyName}`}</Text>
+    <TouchableOpacity style={styles.favoriteButton}>
+      <Image source={require('../assets/favoritee.png')} style={styles.favoriteIcon} />
+      <Image source={require('../assets/points.png')} style={styles.pointsIcon}/>
+    </TouchableOpacity>
+    
+
 
       {/* Geri kalan detaylar */}
       <View style={styles.infoContainer}>
@@ -114,31 +127,33 @@ const ContactsDetailScreen: React.FC<ContactDetailProps> = ({ route, navigation 
 
 const styles = StyleSheet.create({
   backgroundImage: {
-    width: '100%',
-    aspectRatio: 1.5, // Resmi kare olarak ayarlayabilir veya oranı değiştirebilirsiniz.
+    width: 120, // Set the width to the desired size
+    height: 120, // Set the height to the desired size (same as width for a circle)
+    borderRadius: 60, // Make the image round (half of width or height)
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden', // Ensure the rounded corners are applied
+    marginTop: 24, // Adjust the top margin to align with your design
+    alignSelf: 'center', // Center the image horizontally
   },
+  // Other styles remain unchanged
   container: {
-    flex: 1,
     backgroundColor: '#fff',
   },
   name: {
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: 'bold',
-    color: '#fff', // İsim metninin rengi
+    color: 'black',
     textAlign: 'center',
-    marginTop: 190, // İsimin üstündeki mesafe
-    backgroundColor: 'rgba(0, 0, 0, 0.5)', // İsim ve ikonun üzerinde hafif bir karartma efekti
+    // backgroundColor: 'rgba(0, 0, 0, 0.5)',
     width: '100%',
     padding: 20,
-    flexDirection: 'row', // İsim ve favori ikonunu yan yana göstermek için
-    justifyContent: 'space-between', // İsim ve favori ikonunu sağa yaslamak için
-    alignItems: 'center', // Dikey hizalamayı ortalamak için
-    paddingLeft: 20, // İsimden soldaki boşluk
-    paddingRight: 20, // Favori ikonundan sağdaki boşluk
-  },  
-  
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingLeft: 20,
+    paddingRight: 20,
+  },
   infoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -231,6 +246,7 @@ const styles = StyleSheet.create({
     },
     favoriteButton: {
     position: 'absolute',
+    flexDirection:"row",
     top: 20,
     right: 20,
     },
@@ -238,6 +254,11 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     },
+    pointsIcon:{
+      width:30,
+      height:30,
+      marginLeft:3
+    }
     });
     
     export default ContactsDetailScreen;

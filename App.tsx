@@ -16,11 +16,13 @@ import FavoritesScreen from "./src/screens/FavoritesScreen";
 import ContactsDetailScreen from "./src/screens/ContactsDetailScreen";
 import SendSolScreen from "./src/screens/SendSolScreen";
 import TransactionDetailScreen from './src/screens/TransactionDetailScreen';
+import SafePayScreen from './src/screens/SafePayScreen';
 
 const homeIcon = require('./src/assets/home_icon.png');
 const contactsIcon = require('./src/assets/contacts.png');
-const safePayIcon = require('./src/assets/payment.png');
+const safePayIcon = require('./src/assets/safe_pay.png');
 const favoritesIcon = require('./src/assets/favoritee.png');
+
 
 const App = () => {
   return (
@@ -53,6 +55,7 @@ const TabNavigator = () => {
             iconSource = favoritesIcon;
           }
 
+
           return <Image source={iconSource} style={{ width: 24, height: 24, tintColor: focused ? 'blue' : 'gray' }} />;
         },
         tabBarLabel: ({ focused, color }) => {
@@ -62,8 +65,8 @@ const TabNavigator = () => {
             label = 'Home';
           } else if (route.name === 'Contacts') {
             label = 'Contacts';
-          // } else if (route.name === 'SafePay') {
-          //   label = 'SafePay';
+          } else if (route.name === 'SafePay') {
+             label = 'SafePay';
           } else if (route.name === 'Favorites') {
             label = "Favorites";
           }
@@ -84,7 +87,7 @@ const TabNavigator = () => {
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Favorites" component={FavoritesScreen} />
       <Tab.Screen name="Contacts" component={ContactsScreen} />
-      {/* <Tab.Screen name="SafePay" component={SafePay} /> */}
+      <Tab.Screen name="SafePay" component={SafePayScreen} />
     </Tab.Navigator>
   );
 };

@@ -65,6 +65,15 @@ const ContactsScreen: React.FC = () => {
     navigation.navigate('SendSolScreen', { solanaAddress });
   };
 
+  const formatPhoneNumber = (phoneNumber: string) => {
+    const cleaned = ('' + phoneNumber).replace(/\D/g, '');
+    const match = cleaned.match(/^(\d{2})(\d{3})(\d{3})(\d{2})(\d{2})$/);
+    if (match) {
+      return `+${match[1]} (${match[2]}) ${match[3]} ${match[4]} ${match[5]}`;
+    }
+    return phoneNumber;
+  };
+
   const renderItem = ({ item }: { item: ExtendedContact }) => (
     <TouchableOpacity onPress={() => navigation.navigate('ContactsDetailScreen', { contact: item })}>
       <View style={styles.card}>
@@ -75,10 +84,13 @@ const ContactsScreen: React.FC = () => {
         <View style={styles.cardContent}>
           <Text style={styles.name}>{`${item.givenName} ${item.familyName}`}</Text>
           {item.jobTitle && <Text style={styles.jobTitle}>{item.jobTitle}</Text>}
+          {item.phoneNumbers && item.phoneNumbers[0]?.number && (
+            <Text style={styles.infoText}>{formatPhoneNumber(item.phoneNumbers[0]?.number)}</Text>
+          )}
           {item.solanaAddress && (
             <TouchableOpacity style={styles.solanaAddressContainer} onPress={() => handleSolanaAddressPress(item.solanaAddress)}>
-            <Image source={require('../assets/solana.webp')} style={styles.solanaIcon} />
-            <Text style={styles.solanaAddressText}>{`Solana Address: ${item.solanaAddress.substring(0, 15)}...`}</Text>
+              <Image source={require('../assets/solana.webp')} style={styles.solanaIcon} />
+              <Text style={styles.solanaAddressText}>{`Solana Address: ${item.solanaAddress.substring(0, 15)}...`}</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -86,9 +98,11 @@ const ContactsScreen: React.FC = () => {
     </TouchableOpacity>
   );
 
-  function handleSearch(text: string): void {
-    throw new Error('Function not implemented.');
-  }
+  const handleSearch = (text: string) => {
+    setSearchQuery(text);
+    // Burada arama işlemlerini gerçekleştirebilirsiniz
+    // Örneğin, filtreleme yapabilir ve yeni bir listeyi state'e atayabilirsiniz
+  };
 
   return (
     <View style={styles.container}>
@@ -173,6 +187,11 @@ const styles = StyleSheet.create({
   },
   solanaAddressText: {
     color: 'blue',
+  },
+  infoText: {
+    fontSize: 12,
+    marginTop: 1,
+    color: '#333',
   },
 });
 
