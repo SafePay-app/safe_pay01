@@ -1,8 +1,16 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
+import { RouteProp } from '@react-navigation/native';
+import { RootStackParamList } from './RootStackParamList'; // Assuming you have a RootStackParamList type
 
-const TransactionDetailScreen = ({ route }) => {
+type TransactionDetailScreenRouteProp = RouteProp<RootStackParamList, 'TransactionDetail'>;
+
+type TransactionDetailScreenProps = {
+  route: TransactionDetailScreenRouteProp;
+};
+
+const TransactionDetailScreen: React.FC<TransactionDetailScreenProps> = ({ route }) => {
   const { transactionSignature, amount, date } = route.params;
 
   return (
@@ -38,7 +46,6 @@ const styles = StyleSheet.create({
   },
   container: {
     flexGrow: 1,
-    // backgroundColor: 'white',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -73,9 +80,9 @@ const styles = StyleSheet.create({
   },
   signature: {
     flex: 1,
-    maxWidth: 200, // Or any fixed width that suits your layout
+    maxWidth: 200,
     overflow: 'hidden',
-    textOverflow: 'ellipsis',
+    // textOverflow: 'ellipsis',
   },
 });
 
