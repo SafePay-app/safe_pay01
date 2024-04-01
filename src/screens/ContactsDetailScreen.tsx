@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, TextInput, ImageBackground } from 'react-native';
+import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { RouteProp } from '@react-navigation/native';
 import { NavigationProp } from '@react-navigation/native';
 import { RootStackParamList } from './RootStackParamList'; // Assuming you have a RootStackParamList type
-
 
 type ContactDetailScreenRouteProp = RouteProp<RootStackParamList, 'ContactsDetail'>;
 
@@ -15,128 +14,97 @@ type ContactDetailProps = {
 
 const ContactsDetailScreen: React.FC<ContactDetailProps> = ({ route, navigation }) => {
   const { contact } = route.params;
-  const [solanaAddress, setSolanaAddress] = useState<string>('');
-  const [isAddressSaved, setIsAddressSaved] = useState<boolean>(false);
-
-  useEffect(() => {
-    // Kaydedilmiş Solana adresini al
-    const getSavedAddress = async () => {
-      try {
-        const savedAddress = await AsyncStorage.getItem(`solanaAddress_${contact.recordID}`);
-        if (savedAddress !== null) {
-          setSolanaAddress(savedAddress);
-          setIsAddressSaved(true);
-        }
-      } catch (error) {
-        console.error('Error retrieving saved Solana address:', error);
-      }
-    };
-
-    getSavedAddress();
-  }, []);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [newSolanaAddress, setNewSolanaAddress] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
   const handleSaveAddress = async () => {
-    // Try to save the Solana address to AsyncStorage
-    try {
-      await AsyncStorage.setItem(`solanaAddress_${contact.recordID}`, solanaAddress);
-      console.log('Saved Solana address:', solanaAddress);
-      // Immediately after saving, update the state to reflect the change
-      setIsAddressSaved(true); // This line makes the address appear without delay
-    } catch (error) {
-      console.error('Error saving Solana address:', error);
-    }
-  };
-  
-  const handleSolanaAddressPress = () => {
-    // Eğer adres kaydedilmişse, gönderme ekranına yönlendi
-    if (isAddressSaved) {
-      navigation.navigate('SendSolScreen', { solanaAddress });
+    if (newSolanaAddress.length > 0) {
+      try {
+        await AsyncStorage.setItem(`solanaAddress_${contact.recordID}`, newSolanaAddress);
+        // Adresi kaydettikten sonra modalı kapat
+        setModalVisible(false);
+      } catch (error) {
+        console.error('Error saving Solana address:', error);
+      }
+    } else {
+      setErrorMessage('Please enter a valid Solana address.');
     }
   };
 
-  const displayPartialAddress = (address: string) => {
-    const maxLength = 15; // Maksimum karakter sayısı
-    return address.length > maxLength ? `${address.substring(0, maxLength)}...` : address;
-  };
-
-  const formatPhoneNumber = (rawNumber: string) => {
-    const cleaned = ('' + rawNumber).replace(/\D/g, '');
-    const match = cleaned.match(/^(\d{3})(\d{3})(\d{4})$/);
-    if (match) {
-      return `(${match[1]}) ${match[2]}-${match[3]}`;
-    }
-    return rawNumber; // Return the original number if it doesn't match the expected format
-  };
-  
   return (
     <ScrollView style={styles.container}>
-     <View>
+      <View>
         <Image
-           style={styles.backgroundImage}
-           source={contact.thumbnailPath ? { uri: contact.thumbnailPath } : require('../assets/Phantom.png')}
+          style={styles.backgroundImage}
+          source={contact.thumbnailPath ? { uri: contact.thumbnailPath } : require('../assets/Phantom.png')}
         />
-     </View>
-    <Text style={styles.name}>{`${contact.givenName} ${contact.familyName}`}</Text>
-    <TouchableOpacity style={styles.favoriteButton}>
-      <Image source={require('../assets/favoritee.png')} style={styles.favoriteIcon} />
-      <Image source={require('../assets/points.png')} style={styles.pointsIcon}/>
-    </TouchableOpacity>
-    
-
-
-      {/* Geri kalan detaylar */}
+      </View>
+      <Text style={styles.name}>{`${contact.givenName} ${contact.familyName}`}</Text>
+      <TouchableOpacity style={styles.favoriteButton}>
+        <Image source={require('../assets/favoritee.png')} style={styles.favoriteIcon} />
+        <Image source={require('../assets/points.png')} style={styles.pointsIcon} />
+      </TouchableOpacity>
       <View style={styles.infoContainer}>
         <TouchableOpacity>
           <Image source={require('../assets/phone.png')} style={styles.icon} />
         </TouchableOpacity>
         <Text style={styles.infoText}>{contact.phoneNumbers[0]?.number}</Text>
       </View>
-
       <View style={styles.infoContainer}>
         <Image source={require('../assets/email.png')} style={styles.emailIcon} />
         <Text style={styles.infoText}>{contact.emailAddresses[0]?.email}</Text>
       </View>
 
-      <View style={styles.solanaContainer}>
-        <Image source={require('../assets/solana.webp')} style={styles.solanaIcon} />
-        <TextInput
-          style={styles.solanaInput}
-          placeholder='Enter Solana address'
-          placeholderTextColor='#7f8c8d'
-          onChangeText={setSolanaAddress}
-          value={solanaAddress}
-        />
-        <TouchableOpacity style={styles.saveButton} onPress={handleSaveAddress}>
-          <Text style={styles.saveButtonText}>Save</Text>
+      <View style={styles.walletContainer}>
+        <Text style={styles.walletText}>Wallet</Text>
+        <Text style={styles.walletAddress}>
+          {newSolanaAddress ? newSolanaAddress : ''}
+        </Text>
+        <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.addWalletButton}>
+          <Text style={styles.addWalletButtonText}>+Add</Text>
         </TouchableOpacity>
       </View>
-
-      {/* Kaydedilmiş Solana adresinin kısmen gösterildiği bölüm */}
-      {isAddressSaved && solanaAddress ? (
-        <View style={styles.solanaSavedContainer}>
-          <TouchableOpacity onPress={handleSolanaAddressPress} style={styles.solanaAddressButton}>
-            <Text style={styles.solanaAddressButtonText}>
-              {`Solana Address: ${displayPartialAddress(solanaAddress)}`}
-            </Text>
-          </TouchableOpacity>
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalBackground}>
+          <View style={styles.modalContent}>
+            <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
+              <Image source={require('../assets/close.png')} style={styles.closeIcon} />
+            </TouchableOpacity>
+            <TextInput
+              placeholder="Enter Solana address"
+              value={newSolanaAddress}
+              onChangeText={setNewSolanaAddress}
+              style={styles.input}
+              autoCorrect={false}
+            />
+            <TouchableOpacity onPress={handleSaveAddress} style={styles.saveButton}>
+              <Text style={styles.saveButtonText}>Save</Text>
+            </TouchableOpacity>
+            {errorMessage !== "" && <Text style={styles.errorMessage}>{errorMessage}</Text>}
+          </View>
         </View>
-      ) : null}
+      </Modal>
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   backgroundImage: {
-    width: 120, // Set the width to the desired size
-    height: 120, // Set the height to the desired size (same as width for a circle)
-    borderRadius: 60, // Make the image round (half of width or height)
+    width: 120,
+    height: 120,
+    borderRadius: 60,
     justifyContent: 'center',
     alignItems: 'center',
-    overflow: 'hidden', // Ensure the rounded corners are applied
-    marginTop: 24, // Adjust the top margin to align with your design
-    alignSelf: 'center', // Center the image horizontally
+    overflow: 'hidden',
+    marginTop: 24,
+    alignSelf: 'center',
   },
-  // Other styles remain unchanged
   container: {
     backgroundColor: '#fff',
   },
@@ -145,7 +113,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: 'black',
     textAlign: 'center',
-    // backgroundColor: 'rgba(0, 0, 0, 0.5)',
     width: '100%',
     padding: 20,
     flexDirection: 'row',
@@ -177,88 +144,115 @@ const styles = StyleSheet.create({
     marginRight: 10,
     marginLeft: 10,
   },
-  solanaContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 5,
-    margin: 10,
-    marginTop: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    shadowColor: '#000',
-    shadowOffset: { width:0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 5,
-    },
-    solanaIcon: {
-    width: 24,
-    height: 24,
-    marginRight: 10,
-    },
-    solanaInput: {
-    flex: 1,
-    height: 40,
-    borderColor: '#3d58d1',
-    borderWidth: 1,
-    borderRadius: 5,
-    padding: 10,
-    fontSize: 16,
-    color: '#2c3e50',
-    },
-    saveButton: {
-    backgroundColor: '#3d58d1',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
-    marginLeft: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 5,
-    },
-    saveButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-    },
-    solanaSavedContainer: {
-    backgroundColor: '#3d58d1',
-    margin: 10,
-    borderRadius: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 5,
-    },
-    solanaAddressButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    },
-    solanaAddressButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    },
-    favoriteButton: {
+  favoriteButton: {
     position: 'absolute',
-    flexDirection:"row",
+    flexDirection: "row",
     top: 20,
     right: 20,
-    },
-    favoriteIcon: {
+  },
+  favoriteIcon: {
     width: 30,
     height: 30,
-    },
-    pointsIcon:{
-      width:30,
-      height:30,
-      marginLeft:3
-    }
-    });
-    
-    export default ContactsDetailScreen;
+  },
+  pointsIcon: {
+    width: 30,
+    height: 30,
+    marginLeft: 3
+  },
+  addButton: {
+    marginTop: 20,
+    backgroundColor: '#6200ee',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    alignSelf: 'center',
+  },
+  addButtonText: {
+    color: 'white',
+    fontSize: 12,
+  },
+  modalBackground: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent:"flex-end",
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    padding: 20,
+    width: '100%',
+    height:"25%",
+    alignItems:"center",
+    justifyContent:"center",
+    borderTopLeftRadius:20,
+    borderTopRightRadius:20,
+  },
+  input: {
+    height: 40,
+    width:"100%",
+    marginBottom: 12,
+    borderWidth: 1,
+    padding: 10,
+    borderRadius: 5,
+    borderColor: '#ddd',
+  },
+  saveButton: {
+    backgroundColor: '#6200ee',
+    borderRadius: 5,
+    paddingVertical: 10,
+    width:"100%",
+  },
+  saveButtonText: {
+    textAlign: 'center',
+    color: 'white',
+    fontSize: 16,
+  },
+  errorMessage: {
+    color: 'red',
+    textAlign: 'center',
+    marginTop: 10,
+  },
+  walletContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+  },
+  walletText: {
+    fontSize: 18,
+    color: '#333',
+    flex: 1,
+  },
+  walletAddress: {
+    fontSize: 16,
+    color: '#333',
+    flex: 2,
+    textAlign: 'right',
+  },
+  addWalletButton: {
+    backgroundColor: '#6200ee', // Buton rengi
+    width: 66, // Düğme genişliği
+    height: 44, // Düğme yüksekliği
+    borderRadius: 10, // Yarıçap, düğmeyi yuvarlak yapar
+    justifyContent: 'center', // İçerik ortalanır
+    alignItems: 'center', // İçerik ortalanır
+  },
+  addWalletButtonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+    lineHeight: 28, // "+" işaretinin ortalanması için
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 10,
+    right: 15,
+  },
+  closeIcon: {
+    width: 12,
+    height: 12,
+  },
+});
+
+export default ContactsDetailScreen;
