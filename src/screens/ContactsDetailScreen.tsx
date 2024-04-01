@@ -64,12 +64,14 @@ const ContactsDetailScreen: React.FC<ContactDetailProps> = ({ route, navigation 
       </TouchableOpacity>
       <View style={styles.infoContainer}>
         <TouchableOpacity>
-          <Image source={require('../assets/phone.png')} style={styles.icon} />
+          {/* <Image source={require('../assets/phone.png')} style={styles.icon} /> */}
         </TouchableOpacity>
+        <Text>Phone</Text>
         <Text style={styles.infoText}>{contact.phoneNumbers[0]?.number}</Text>
       </View>
       <View style={styles.infoContainer}>
-        <Image source={require('../assets/email.png')} style={styles.emailIcon} />
+        {/* <Image source={require('../assets/email.png')} style={styles.emailIcon} /> */}
+        <Text>Email</Text>
         <Text style={styles.infoText}>{contact.emailAddresses[0]?.email}</Text>
       </View>
 
@@ -118,13 +120,22 @@ const ContactsDetailScreen: React.FC<ContactDetailProps> = ({ route, navigation 
           </View>
         </View>
       </Modal>
-      <TouchableOpacity 
-        style={[styles.saveButton, isAddressSaved ? styles.activeButton : styles.inactiveButton]}
-        onPress={isAddressSaved ? () => {/* handle the press action */} : null}
-        disabled={!isAddressSaved}
-      >
-        <Text style={styles.saveButtonText}>Safe Pay</Text>
-      </TouchableOpacity>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+  <TouchableOpacity 
+    style={[styles.saveButton, isAddressSaved ? styles.activeButton : styles.inactiveButton]}
+    onPress={isAddressSaved ? () => {/* handle the press action */} : null}
+    disabled={!isAddressSaved}
+  >
+    <Text style={styles.saveButtonText}>Pay</Text>
+  </TouchableOpacity>
+  <TouchableOpacity 
+    style={styles.moreButton}
+    onPress={() => {/* handle the press action */}}
+  >
+    {/* <Image source={require('../assets/more.png')} style={styles.moreIcon} /> */}
+    <Text style={{color:"#fff",fontSize:30,flex:1,justifyContent:"center",alignItems:"center",textAlign:"center"}}>...</Text>
+  </TouchableOpacity>
+</View>
     </ScrollView>
   );
 };
@@ -225,10 +236,15 @@ const styles = StyleSheet.create({
     fontSize: 15
   },
   saveButton: {
+    flex:1,
     height: 50,
     justifyContent: 'center',
     alignItems: 'center',
-    width: '100%',
+    width: '75%',
+    marginTop:200,
+    marginLeft:10,
+    marginRight:8,
+    borderRadius:10
   },
   saveButtonModal: {
     height: 50,
@@ -312,6 +328,20 @@ const styles = StyleSheet.create({
   inactiveButton: {
     backgroundColor: '#ccc',
     opacity: 0.5,
+  },
+  moreButton: {
+    width: '25%',
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#6200ee',
+    marginRight:5,
+    borderRadius: 10,
+    marginTop:200,
+  },
+  moreIcon: {
+    width: 20,
+    height: 20,
   },
 });
 
