@@ -76,6 +76,7 @@ const ContactsDetailScreen: React.FC<ContactDetailProps> = ({ route, navigation 
             <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
               <Image source={require('../assets/close.png')} style={styles.closeIcon} />
             </TouchableOpacity>
+            <Text style={{fontSize:25,fontWeight:"bold",color:"black",marginBottom:12,}}>Add Wallet Address</Text>
             <TextInput
               placeholder="Enter Solana address"
               value={newSolanaAddress}
@@ -195,6 +196,7 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 5,
     borderColor: '#ddd',
+    fontSize:15
   },
   saveButton: {
     backgroundColor: '#6200ee',
@@ -205,7 +207,8 @@ const styles = StyleSheet.create({
   saveButtonText: {
     textAlign: 'center',
     color: 'white',
-    fontSize: 16,
+    fontSize: 20,
+    fontWeight:"bold"
   },
   errorMessage: {
     color: 'red',
@@ -250,8 +253,8 @@ const styles = StyleSheet.create({
     right: 15,
   },
   closeIcon: {
-    width: 12,
-    height: 12,
+    width: 15,
+    height: 15,
   },
 });
 
