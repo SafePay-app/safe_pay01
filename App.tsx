@@ -19,9 +19,9 @@ import TransactionDetailScreen from './src/screens/TransactionDetailScreen';
 import SafePayScreen from './src/screens/SafePayScreen';
 
 const homeIcon = require('./src/assets/home_icon.png');
-const contactsIcon = require('./src/assets/contacts.png');
+const contactsIcon = require('./src/assets/user.png');
 const safePayIcon = require('./src/assets/safe_pay.png');
-const favoritesIcon = require('./src/assets/favoritee.png');
+const favoritesIcon = require('./src/assets/starr.png');
 
 
 const App = () => {
@@ -30,9 +30,9 @@ const App = () => {
       <Stack.Navigator>
         <Stack.Screen name="TabNavigator" component={TabNavigator} options={{ headerShown: false }} />
         {/* <Stack.Screen name="SendScreen" component={SendScreen} /> */}
-        <Stack.Screen name="ContactsDetailScreen" component={ContactsDetailScreen}/>
-        <Stack.Screen name="SendSolScreen" component={SendSolScreen}/>
-        <Stack.Screen name="TransactionDetailScreen" component={TransactionDetailScreen}/>
+        <Stack.Screen name="ContactsDetailScreen" component={ContactsDetailScreen} options={{ headerTitle: 'Detail' }} />
+        <Stack.Screen name="SendSolScreen" component={SendSolScreen} options={{ headerTitleAlign: 'center' }} />
+        <Stack.Screen name="TransactionDetailScreen" component={TransactionDetailScreen} options={{ headerTitleAlign: 'center' }} />
       </Stack.Navigator>
     </NavigationContainer>
   );
@@ -66,7 +66,7 @@ const TabNavigator = () => {
           } else if (route.name === 'Contacts') {
             label = 'Contacts';
           } else if (route.name === 'SafePay') {
-             label = 'SafePay';
+            label = 'SafePay';
           } else if (route.name === 'Favorites') {
             label = "Favorites";
           }
