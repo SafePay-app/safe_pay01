@@ -22,7 +22,8 @@ const ContactsDetailScreen: React.FC<ContactDetailProps> = ({ route, navigation 
   const [isAddressSaved, setIsAddressSaved] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [isEditing, setIsEditing] = useState(false);
-  const [amount, setAmount] = useState('');
+  const [amount, setAmount] = useState<string>('');
+  const [transactionSignature, setTransactionSignature] = useState<string | null>(null);
   const [sendModalVisible, setSendModalVisible] = useState(false);
 
   const handleAddAddress = () => {
@@ -47,59 +48,64 @@ const ContactsDetailScreen: React.FC<ContactDetailProps> = ({ route, navigation 
     }
   };
 
-  const handleSendTransaction = async () => {
+  const sendSol = async () => {
     try {
-      // Solana ağına bağlan
-      const connection = new Connection('https://api.devnet.solana.com');
-  
-      // Gönderici ve alıcı hesaplarını belirle
-      const senderPublicKey = new PublicKey('Exp8JQXYirkqRcLuh9JoXunvyp893XTunigQeZ7Qw1se');
-      const receiverPublicKey = new PublicKey(newSolanaAddress);
-  
-      // Gönderici hesapın bakiyesini kontrol et
-      const senderAccountInfo = await connection.getAccountInfo(senderPublicKey);
-      if (!senderAccountInfo) {
-        throw new Error('Gönderici hesap bulunamadı');
-      }
-  
-      // Gönderici hesap için özel anahtar oluştur
-      const privateKey = new Uint8Array([26, 6, 112, 138, 66, 108, 175, 95, 47, 83, 175, 223, 234, 160, 5, 161, 122, 86, 0, 24, 112, 109, 156, 160, 6, 243, 111, 118, 231, 112, 205, 216, 93, 105, 27, 59, 25, 59, 189, 122, 249, 129, 71, 218, 151, 150, 181, 123, 166, 25, 236, 30, 42, 246, 213, 163, 46, 135, 232, 211, 11, 112, 149, 29]);
-  
-      // Gönderilecek miktarı belirle
-      const lamportsToSend = Number(amount) * 10 ** 9; // SOL cinsinden miktarı lamport cinsine çevir
-  
-      // İşlem oluştur
+      const senderSecretKey = Uint8Array.from([26, 6, 112, 138, 66, 108, 175, 95, 47, 83, 175, 223, 234, 160, 5, 161, 122, 86, 0, 24, 112, 109, 156, 160, 6, 243, 111, 118, 231, 112, 205, 216, 93, 105, 27, 59, 25, 59, 189, 122, 249, 129, 71, 218, 151, 150, 181, 123, 166, 25, 236, 30, 42, 246, 213, 163, 46, 135, 232, 211, 11, 112, 149, 29]);
+      const senderKeypair = Keypair.fromSecretKey(senderSecretKey);
+
+      const connection = new Connection(clusterApiUrl('devnet'), 'confirmed');
+      const recipientPublicKey = new PublicKey(newSolanaAddress);
+
       const transaction = new Transaction().add(
         SystemProgram.transfer({
-          fromPubkey: senderPublicKey,
-          toPubkey: receiverPublicKey,
-          lamports: lamportsToSend,
+          fromPubkey: senderKeypair.publicKey,
+          toPubkey: recipientPublicKey,
+          lamports: parseFloat(amount) * LAMPORTS_PER_SOL,
         })
       );
-  
-      // İşlemi imzala
-      transaction.feePayer = senderPublicKey;
-      transaction.recentBlockhash = (await connection.getRecentBlockhash()).blockhash;
-      transaction.partialSign(new Keypair(privateKey));
-  
-      // İşlemi ağa gönder ve onayla
-      const signature = await sendAndConfirmTransaction(connection, transaction, [new Keypair(privateKey)]);
-  
-      // Başarılı işlem bildirimi göster
-      Alert.alert('Success', `Transaction successful! Amount: ${amount} SOL`);
-  
-      // Modal'ı kapat
-      setSendModalVisible(false);
-    } catch (error) {
-      // Hata durumunda kullanıcıya bildirim göster
-      Alert.alert('Error', `Failed to send transaction: ${error.message}`);
-      console.log(error);
+
+      const { blockhash } = await connection.getRecentBlockhash('finalized');
+      transaction.recentBlockhash = blockhash;
+      transaction.feePayer = senderKeypair.publicKey;
+
+      transaction.sign(senderKeypair);
+
+      if (!transaction.verifySignatures()) {
+        throw new Error('Transaction signature verification failed');
+      }
+
+      const serializedTransaction = transaction.serialize({
+        requireAllSignatures: false,
+        verifySignatures: true
+      });
+
+      const signature = await connection.sendRawTransaction(serializedTransaction);
+      await connection.confirmTransaction(signature, 'finalized');
+      setTransactionSignature(signature);
+
+      await connection.confirmTransaction(signature, 'finalized');
+      setTransactionSignature(signature);
+      
+      // Home tab'ine yönlendir ve işlem imzasını parametre olarak gönder
+      navigation.navigate('TransactionDetailScreen', {
+        transactionId: signature, // Pass the signature as the transactionId
+      });
+
+
+      Alert.alert("Success", `Transaction successful with signature: ${signature}`);
+    } catch (error: any) {
+      console.error('Transaction error:', error);
+      Alert.alert("Error", `Transaction failed: ${error.message}`);
     }
   };
 
   const handleSendSolScreen = async () => {
     setSendModalVisible(true);
   };
+
+  // function handleSendTransaction(event: GestureResponderEvent): void {
+  //   throw new Error('Function not implemented.');
+  // }
 
   return (
     <ScrollView style={styles.container}>
@@ -189,7 +195,7 @@ const ContactsDetailScreen: React.FC<ContactDetailProps> = ({ route, navigation 
               autoCorrect={false}
               keyboardType='numeric'
             />
-            <TouchableOpacity onPress={handleSendTransaction} style={styles.saveButtonModal}>
+            <TouchableOpacity onPress={sendSol} style={styles.saveButtonModal}>
               <Text style={styles.saveButtonText}>Send</Text>
             </TouchableOpacity>
           </View>
@@ -205,7 +211,7 @@ const ContactsDetailScreen: React.FC<ContactDetailProps> = ({ route, navigation 
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.saveButtonMore, isAddressSaved ? styles.activeButton : styles.inactiveButton]}
-          onPress={isAddressSaved ? handleSendTransaction : null}
+          onPress={isAddressSaved ? sendSol : null}
           disabled={!isAddressSaved}
         >
           <Text style={styles.saveButtonText}>...</Text>
