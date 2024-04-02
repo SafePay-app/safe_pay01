@@ -18,10 +18,10 @@ import SendSolScreen from "./src/screens/SendSolScreen";
 import TransactionDetailScreen from './src/screens/TransactionDetailScreen';
 import SafePayScreen from './src/screens/SafePayScreen';
 
-const homeIcon = require('./src/assets/home_icon.png');
-const contactsIcon = require('./src/assets/user.png');
-const safePayIcon = require('./src/assets/safe_pay.png');
-const favoritesIcon = require('./src/assets/starr.png');
+const homeIcon = require('./src/assets/home-3-2.png');
+const contactsIcon = require('./src/assets/user-circle.png');
+const safePayIcon = require('./src/assets/orientation-locked.png');
+const favoritesIcon = require('./src/assets/star_icon.png');
 
 
 const App = () => {

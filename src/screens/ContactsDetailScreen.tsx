@@ -3,7 +3,10 @@ import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, TextInput,
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { RouteProp } from '@react-navigation/native';
 import { NavigationProp } from '@react-navigation/native';
-import { RootStackParamList } from './RootStackParamList'; // Assuming you have a RootStackParamList type
+import { RootStackParamList } from './RootStackParamList';
+import { Connection, PublicKey, clusterApiUrl, Transaction, SystemProgram, Keypair, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { Buffer } from 'buffer';
+global.Buffer = Buffer;
 
 type ContactDetailScreenRouteProp = RouteProp<RootStackParamList, 'ContactsDetail'>;
 
@@ -19,12 +22,14 @@ const ContactsDetailScreen: React.FC<ContactDetailProps> = ({ route, navigation 
   const [isAddressSaved, setIsAddressSaved] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [isEditing, setIsEditing] = useState(false);
+  const [amount, setAmount] = useState('');
+  const [sendModalVisible, setSendModalVisible] = useState(false);
 
   const handleAddAddress = () => {
     if (!isAddressSaved) {
       setModalVisible(true);
     } else {
-      setIsEditing(true); // Adres kaydedildiyse düzenleme moduna geç
+      setIsEditing(true);
     }
   };
 
@@ -42,16 +47,58 @@ const ContactsDetailScreen: React.FC<ContactDetailProps> = ({ route, navigation 
     }
   };
 
-  const handleSendSolScreen = async () => {
-    // Get the saved Solana address from AsyncStorage
-    const savedAddress = await AsyncStorage.getItem(`solanaAddress_${contact.recordID}`);
-    if (savedAddress) {
-      // Navigate to SendSolScreen and pass the saved address as a parameter
-      navigation.navigate('SendSolScreen', { solanaAddress: savedAddress });
-    } else {
-      // Handle case where no address is saved
-      console.error('No Solana address saved for contact:', contact.recordID);
+  const handleSendTransaction = async () => {
+    try {
+      // Solana ağına bağlan
+      const connection = new Connection('https://api.devnet.solana.com');
+  
+      // Gönderici ve alıcı hesaplarını belirle
+      const senderPublicKey = new PublicKey('Exp8JQXYirkqRcLuh9JoXunvyp893XTunigQeZ7Qw1se');
+      const receiverPublicKey = new PublicKey(newSolanaAddress);
+  
+      // Gönderici hesapın bakiyesini kontrol et
+      const senderAccountInfo = await connection.getAccountInfo(senderPublicKey);
+      if (!senderAccountInfo) {
+        throw new Error('Gönderici hesap bulunamadı');
+      }
+  
+      // Gönderici hesap için özel anahtar oluştur
+      const privateKey = new Uint8Array([26, 6, 112, 138, 66, 108, 175, 95, 47, 83, 175, 223, 234, 160, 5, 161, 122, 86, 0, 24, 112, 109, 156, 160, 6, 243, 111, 118, 231, 112, 205, 216, 93, 105, 27, 59, 25, 59, 189, 122, 249, 129, 71, 218, 151, 150, 181, 123, 166, 25, 236, 30, 42, 246, 213, 163, 46, 135, 232, 211, 11, 112, 149, 29]);
+  
+      // Gönderilecek miktarı belirle
+      const lamportsToSend = Number(amount) * 10 ** 9; // SOL cinsinden miktarı lamport cinsine çevir
+  
+      // İşlem oluştur
+      const transaction = new Transaction().add(
+        SystemProgram.transfer({
+          fromPubkey: senderPublicKey,
+          toPubkey: receiverPublicKey,
+          lamports: lamportsToSend,
+        })
+      );
+  
+      // İşlemi imzala
+      transaction.feePayer = senderPublicKey;
+      transaction.recentBlockhash = (await connection.getRecentBlockhash()).blockhash;
+      transaction.partialSign(new Keypair(privateKey));
+  
+      // İşlemi ağa gönder ve onayla
+      const signature = await sendAndConfirmTransaction(connection, transaction, [new Keypair(privateKey)]);
+  
+      // Başarılı işlem bildirimi göster
+      Alert.alert('Success', `Transaction successful! Amount: ${amount} SOL`);
+  
+      // Modal'ı kapat
+      setSendModalVisible(false);
+    } catch (error) {
+      // Hata durumunda kullanıcıya bildirim göster
+      Alert.alert('Error', `Failed to send transaction: ${error.message}`);
+      console.log(error);
     }
+  };
+
+  const handleSendSolScreen = async () => {
+    setSendModalVisible(true);
   };
 
   return (
@@ -75,51 +122,79 @@ const ContactsDetailScreen: React.FC<ContactDetailProps> = ({ route, navigation 
         </View>
       </View>
       <View style={styles.infoContainer}>
-  <Text style={{marginBottom:25,fontSize:18,color:"black"}}>Wallet</Text>
-  <View style={styles.walletContentContainer}>
-    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-      {isAddressSaved && (
-        <>
-          <Image source={require('../assets/solana.webp')} style={styles.solanaIcon} />
-          <Text style={styles.walletAddressText} numberOfLines={1}>
-            {newSolanaAddress}
-          </Text>
-        </>
-      )}
-    </View>
-    <TouchableOpacity onPress={handleAddAddress} style={styles.addWalletButton}>
-      <Text style={styles.addWalletButtonText}>{isAddressSaved ? 'Edit' : '+ Add'}</Text>
-    </TouchableOpacity>
-  </View>
-</View>
-<Modal
-  animationType="slide"
-  transparent={true}
-  visible={modalVisible}
-  onRequestClose={() => setModalVisible(false)}
->
-  <View style={styles.modalBackground}>
-    <View style={styles.modalContent}>
-      <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
-        <Image source={require('../assets/close.png')} style={styles.closeIcon} />
-      </TouchableOpacity>
-      <View style={{ marginBottom: 12, alignItems: 'flex-start' }}>
-        <Text style={{ fontSize: 25, fontWeight: "bold", color: "black" }}>Add Wallet Address</Text>
+        <Text style={{ marginBottom: 25, fontSize: 18, color: "black" }}>Wallet</Text>
+        <View style={styles.walletContentContainer}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            {isAddressSaved && (
+              <>
+                <Image source={require('../assets/solana.webp')} style={styles.solanaIcon} />
+                <Text style={styles.walletAddressText} numberOfLines={1}>
+                  {newSolanaAddress}
+                </Text>
+              </>
+            )}
+          </View>
+          <TouchableOpacity onPress={handleAddAddress} style={styles.addWalletButton}>
+            <Text style={styles.addWalletButtonText}>{isAddressSaved ? 'Edit' : '+ Add'}</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-      <TextInput
-        placeholder="Enter Solana address"
-        value={newSolanaAddress}
-        onChangeText={setNewSolanaAddress}
-        style={styles.input}
-        autoCorrect={false}
-      />
-      <TouchableOpacity onPress={handleSaveAddress} style={styles.saveButtonModal}>
-        <Text style={styles.saveButtonText}>Save</Text>
-      </TouchableOpacity>
-      {errorMessage !== "" && <Text style={styles.errorMessage}>{errorMessage}</Text>}
-    </View>
-  </View>
-</Modal>
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalBackground}>
+          <View style={styles.modalContent}>
+            <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
+              <Image source={require('../assets/close.png')} style={styles.closeIcon} />
+            </TouchableOpacity>
+            <View style={{ alignSelf: 'flex-start', width: '100%' }}>
+              <Text style={styles.modalTitle}>Add Wallet Address</Text>
+            </View>
+            <TextInput
+              placeholder="Enter Solana address"
+              value={newSolanaAddress}
+              onChangeText={setNewSolanaAddress}
+              style={styles.input}
+              autoCorrect={false}
+            />
+            <TouchableOpacity onPress={handleSaveAddress} style={styles.saveButtonModal}>
+              <Text style={styles.saveButtonText}>Save</Text>
+            </TouchableOpacity>
+            {errorMessage !== "" && <Text style={styles.errorMessage}>{errorMessage}</Text>}
+          </View>
+        </View>
+      </Modal>
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={sendModalVisible}
+        onRequestClose={() => setSendModalVisible(false)}
+      >
+        <View style={styles.modalBackground}>
+          <View style={styles.modalContent}>
+            <TouchableOpacity style={styles.closeButton} onPress={() => setSendModalVisible(false)}>
+              <Image source={require('../assets/close.png')} style={styles.closeIcon} />
+            </TouchableOpacity>
+            <View style={{ alignSelf: 'flex-start', width: '100%' }}>
+              <Text style={styles.modalTitle}>Amount (USDC)</Text>
+            </View>
+            <TextInput
+              placeholder="Enter amount"
+              value={amount}
+              onChangeText={setAmount}
+              style={styles.input}
+              autoCorrect={false}
+              keyboardType='numeric'
+            />
+            <TouchableOpacity onPress={handleSendTransaction} style={styles.saveButtonModal}>
+              <Text style={styles.saveButtonText}>Send</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
       <View style={styles.bottomButtonsContainer}>
         <TouchableOpacity
           style={[styles.saveButton, isAddressSaved ? styles.activeButton : styles.inactiveButton]}
@@ -130,7 +205,7 @@ const ContactsDetailScreen: React.FC<ContactDetailProps> = ({ route, navigation 
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.saveButtonMore, isAddressSaved ? styles.activeButton : styles.inactiveButton]}
-          onPress={isAddressSaved ? () => { } : null}
+          onPress={isAddressSaved ? handleSendTransaction : null}
           disabled={!isAddressSaved}
         >
           <Text style={styles.saveButtonText}>...</Text>
@@ -139,6 +214,7 @@ const ContactsDetailScreen: React.FC<ContactDetailProps> = ({ route, navigation 
     </ScrollView>
   );
 };
+
 
 const styles = StyleSheet.create({
   backgroundImage: {
@@ -166,7 +242,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingLeft: 20,
     paddingRight: 20,
-    borderBottomWidth: 0.6,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0, 0, 0, 0.1)',
   },
   infoContainer: {
     flexDirection: 'row',
@@ -272,8 +349,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     width: '100%',
-    backgroundColor: "purple",
+    backgroundColor: "#6420AA",
     borderRadius: 10,
+  },
+  modalTitle: {
+    fontSize: 25,
+    fontWeight: "bold",
+    color: "black",
+    marginBottom: 12,
+    marginLeft: 10, // Başlığı sola yaslamak için sol kenara biraz boşluk ekleyin
   },
   saveButtonText: {
     fontSize: 18,
@@ -309,17 +393,17 @@ const styles = StyleSheet.create({
   },
   walletAddressText: {
     fontSize: 12,
-    marginTop:30,
-    color: '#333',
+    marginTop: 30,
+    color: 'grey',
     marginRight: 10,
-    flexShrink: 1, 
+    flexShrink: 1,
   },
   solanaIcon: {
-    width: 18, 
-    height: 18, 
+    width: 18,
+    height: 18,
     marginRight: 5,
-    marginLeft:27.5,
-    marginTop:30
+    marginLeft: 27.5,
+    marginTop: 30
   },
   walletAddress: {
     fontSize: 8,
@@ -343,12 +427,12 @@ const styles = StyleSheet.create({
     color: 'black',
     fontSize: 18,
     fontWeight: 'bold',
-    marginTop:15,
+    marginTop: 15,
     paddingHorizontal: 12,
     height: 44,
     textAlign: 'center',
-    justifyContent:"center" // Metni ortalamak için textAlign özelliğini ekledik
-},
+    justifyContent: "center" // Metni ortalamak için textAlign özelliğini ekledik
+  },
   closeButton: {
     position: 'absolute',
     top: 10,
@@ -359,7 +443,7 @@ const styles = StyleSheet.create({
     height: 15,
   },
   activeButton: {
-    backgroundColor: '#6200ee',
+    backgroundColor: '#6420AA',
   },
   inactiveButton: {
     backgroundColor: '#ccc',
