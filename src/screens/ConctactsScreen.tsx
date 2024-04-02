@@ -87,12 +87,12 @@ const ContactsScreen: React.FC = () => {
           {item.phoneNumbers && item.phoneNumbers[0]?.number && (
             <Text style={styles.infoText}>{formatPhoneNumber(item.phoneNumbers[0]?.number)}</Text>
           )}
-          {item.solanaAddress && (
+          {/* {item.solanaAddress && (
             <TouchableOpacity style={styles.solanaAddressContainer} onPress={() => handleSolanaAddressPress(item.solanaAddress)}>
               <Image source={require('../assets/solana.webp')} style={styles.solanaIcon} />
               <Text style={styles.solanaAddressText}>{`Solana Address: ${item.solanaAddress.substring(0, 15)}...`}</Text>
             </TouchableOpacity>
-          )}
+          )} */}
         </View>
       </View>
     </TouchableOpacity>
@@ -107,7 +107,7 @@ const ContactsScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <View style={styles.searchContainer}>
-        <Image style={styles.menuIcon} source={require('../assets/menu.png')} />
+        <Image style={styles.searchIcon} source={require('../assets/search.png')} />
         <TextInput
           style={styles.searchInput}
           placeholder="Search for people"
@@ -115,6 +115,9 @@ const ContactsScreen: React.FC = () => {
           value={searchQuery}
           onChangeText={handleSearch}
         />
+        <TouchableOpacity style={styles.microphoneIconContainer}>
+          <Image style={styles.microphoneIcon} source={require('../assets/mic.png')} />
+        </TouchableOpacity>
       </View>
       <FlatList
         data={contacts}
@@ -139,7 +142,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     marginBottom: 20,
   },
-  menuIcon: {
+  searchIcon: {
     width: 20,
     height: 20,
     marginRight: 10,
@@ -151,6 +154,13 @@ const styles = StyleSheet.create({
     height: 50,
     padding: 10,
     fontSize: 18,
+  },
+  microphoneIconContainer: {
+    marginLeft: 10,
+  },
+  microphoneIcon: {
+    width: 20,
+    height: 20,
   },
   card: {
     flexDirection: 'row',

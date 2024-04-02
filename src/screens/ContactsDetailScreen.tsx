@@ -18,9 +18,14 @@ const ContactsDetailScreen: React.FC<ContactDetailProps> = ({ route, navigation 
   const [newSolanaAddress, setNewSolanaAddress] = useState("");
   const [isAddressSaved, setIsAddressSaved] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
 
   const handleAddAddress = () => {
-    setModalVisible(true);
+    if (!isAddressSaved) {
+      setModalVisible(true);
+    } else {
+      setIsEditing(true); // Adres kaydedildiyse düzenleme moduna geç
+    }
   };
 
   const handleSaveAddress = async () => {
@@ -58,28 +63,24 @@ const ContactsDetailScreen: React.FC<ContactDetailProps> = ({ route, navigation 
         />
       </View>
       <Text style={styles.name}>{`${contact.givenName} ${contact.familyName}`}</Text>
-      <TouchableOpacity style={styles.favoriteButton}>
-        <Image source={require('../assets/favoritee.png')} style={styles.favoriteIcon} />
-        <Image source={require('../assets/points.png')} style={styles.pointsIcon} />
-      </TouchableOpacity>
       <View style={styles.infoContainer}>
-        <TouchableOpacity>
-          {/* <Image source={require('../assets/phone.png')} style={styles.icon} /> */}
-        </TouchableOpacity>
-        <Text>Phone</Text>
-        <Text style={styles.infoText}>{contact.phoneNumbers[0]?.number}</Text>
+        <View>
+          <Text style={styles.labelText}>Phone</Text>
+          <Text style={styles.infoText}>{contact.phoneNumbers[0]?.number}</Text>
+        </View>
       </View>
       <View style={styles.infoContainer}>
-        {/* <Image source={require('../assets/email.png')} style={styles.emailIcon} /> */}
-        <Text>Email</Text>
-        <Text style={styles.infoText}>{contact.emailAddresses[0]?.email}</Text>
+        <View>
+          <Text style={styles.labelText}>Email</Text>
+          <Text style={styles.infoText}>{contact.emailAddresses[0]?.email}</Text>
+        </View>
       </View>
-
       <View style={styles.walletContainer}>
         <Text style={styles.walletText}>Wallet</Text>
-        <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.addWalletButton}>
-          <Text style={styles.addWalletButtonText}>+Add</Text>
-        </TouchableOpacity>
+        <TouchableOpacity onPress={() => handleAddAddress()} style={styles.addWalletButton}>
+  <Text style={styles.addWalletButtonText}>{isAddressSaved ? 'Edit' : '+Add'}</Text>
+</TouchableOpacity>
+
       </View>
       <TouchableOpacity style={styles.walletAddressContainer} onPress={handleSendSolScreen}>
         {newSolanaAddress && (
@@ -120,22 +121,22 @@ const ContactsDetailScreen: React.FC<ContactDetailProps> = ({ route, navigation 
           </View>
         </View>
       </Modal>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-  <TouchableOpacity 
-    style={[styles.saveButton, isAddressSaved ? styles.activeButton : styles.inactiveButton]}
-    onPress={isAddressSaved ? () => {/* handle the press action */} : null}
-    disabled={!isAddressSaved}
-  >
-    <Text style={styles.saveButtonText}>Pay</Text>
-  </TouchableOpacity>
-  <TouchableOpacity 
-    style={styles.moreButton}
-    onPress={() => {/* handle the press action */}}
-  >
-    {/* <Image source={require('../assets/more.png')} style={styles.moreIcon} /> */}
-    <Text style={{color:"#fff",fontSize:30,flex:1,justifyContent:"center",alignItems:"center",textAlign:"center"}}>...</Text>
-  </TouchableOpacity>
-</View>
+      <View style={styles.bottomButtonsContainer}>
+        <TouchableOpacity 
+          style={[styles.saveButton, isAddressSaved ? styles.activeButton : styles.inactiveButton]}
+          onPress={isAddressSaved ? handleSendSolScreen : null}
+          disabled={!isAddressSaved}
+        >
+          <Text style={styles.saveButtonText}>Pay</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={[styles.saveButtonMore, isAddressSaved ? styles.activeButton : styles.inactiveButton]}
+          onPress={isAddressSaved ? () => {/* handle the press action */} : null}
+          disabled={!isAddressSaved}
+        >
+          <Text style={styles.saveButtonText}>...</Text>
+        </TouchableOpacity>
+      </View>
     </ScrollView>
   );
 };
@@ -166,6 +167,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingLeft: 20,
     paddingRight: 20,
+    borderBottomWidth:0.6
   },
   infoContainer: {
     flexDirection: 'row',
@@ -173,7 +175,11 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#ccc',
+    borderBottomColor: 'rgba(0, 0, 0, 0.2)', // Adjust opacity as needed
+  },
+  labelText: {
+    fontSize: 12,
+    color: '#777',
   },
   icon: {
     width: 24,
@@ -236,15 +242,24 @@ const styles = StyleSheet.create({
     fontSize: 15
   },
   saveButton: {
-    flex:1,
+    flex: 4, // This will make the button take approximately 80% of the available space
     height: 50,
     justifyContent: 'center',
     alignItems: 'center',
-    width: '75%',
-    marginTop:200,
-    marginLeft:10,
-    marginRight:8,
-    borderRadius:10
+    borderRadius: 10,
+    marginLeft: 10,
+    marginRight: 5,
+    marginTop:180 // Adjusted to add some spacing between the two buttons
+  },
+  saveButtonMore: {
+    flex: 1, // This will make the button take approximately 20% of the available space
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 10,
+    marginLeft: 5, // Adjusted to add some spacing between the two buttons
+    marginRight: 10,
+    marginTop:180
   },
   saveButtonModal: {
     height: 50,
@@ -276,23 +291,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingLeft: 20,
     marginTop: 1,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(0, 0, 0, 0.3)', // Use the same opacity for consistency
+    paddingVertical: 10, // Add some padding if needed
   },
   walletAddressText: {
     fontSize: 10,
     color: '#333',
-    marginTop: -16
-    // marginLeft: 2,
+    marginTop: -55,
+    marginLeft:-5,
   },
   solanaIcon: {
     width: 20,
     height: 20,
     marginRight: 5,
     marginBottom: 12,
+    marginTop: -42, // Adjusted to move the Solana icon closer to the wallet address text
   },
   walletText: {
     fontSize: 18,
     color: '#333',
     flex: 1,
+    marginBottom:15
   },
   walletAddress: {
     fontSize: 8,
@@ -300,18 +320,33 @@ const styles = StyleSheet.create({
     flex: 2,
   },
   addWalletButton: {
-    backgroundColor: '#6200ee', // Buton rengi
-    width: 66, // Düğme genişliği
-    height: 44, // Düğme yüksekliği
-    borderRadius: 10, // Yarıçap, düğmeyi yuvarlak yapar
-    justifyContent: 'center', // İçerik ortalanır
-    alignItems: 'center', // İçerik ortalanır
+    backgroundColor: '#fff',
+    width: 66,
+    height: 44,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    // shadowColor: '#000',
+    // shadowOffset: {
+    //   width: 0,
+    //   height: 3,
+    // },
+    shadowOpacity: 0.6,
+    shadowRadius: 5,
+    elevation: 5,
+    borderWidth:0.4
   },
   addWalletButtonText: {
-    color: 'white',
+    color: 'black',
     fontSize: 18,
     fontWeight: 'bold',
-    lineHeight: 28, // "+" işaretinin ortalanması için
+    lineHeight: 28,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    // textShadowOffset: {
+    //   width: 1,
+    //   height: 1,
+    // },
+    // textShadowRadius: 3,
   },
   closeButton: {
     position: 'absolute',
@@ -329,19 +364,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#ccc',
     opacity: 0.5,
   },
-  moreButton: {
-    width: '25%',
-    height: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#6200ee',
-    marginRight:5,
-    borderRadius: 10,
-    marginTop:200,
-  },
-  moreIcon: {
-    width: 20,
-    height: 20,
+  bottomButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 10,
   },
 });
 
