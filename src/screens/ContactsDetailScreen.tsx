@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert } from 'react-native';
+import { View, Text, Image, ScrollView, TouchableOpacity, TextInput, Modal, Alert, ActivityIndicator, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { RouteProp } from '@react-navigation/native';
 import { NavigationProp } from '@react-navigation/native';
@@ -16,7 +16,11 @@ type ContactDetailProps = {
 };
 
 const ContactsDetailScreen: React.FC<ContactDetailProps> = ({ route, navigation }) => {
-  const { contact } = route.params;
+  const { contact } = route.params || {};
+
+  if (!contact) {
+    return <Text>No contact found!</Text>;
+  }
   const [modalVisible, setModalVisible] = useState(false);
   const [newSolanaAddress, setNewSolanaAddress] = useState("");
   const [isAddressSaved, setIsAddressSaved] = useState(false);
@@ -25,6 +29,7 @@ const ContactsDetailScreen: React.FC<ContactDetailProps> = ({ route, navigation 
   const [amount, setAmount] = useState<string>('');
   const [transactionSignature, setTransactionSignature] = useState<string | null>(null);
   const [sendModalVisible, setSendModalVisible] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleAddAddress = () => {
     if (!isAddressSaved) {
@@ -49,6 +54,7 @@ const ContactsDetailScreen: React.FC<ContactDetailProps> = ({ route, navigation 
   };
 
   const sendSol = async () => {
+    setIsLoading(true);
     try {
       const senderSecretKey = Uint8Array.from([26, 6, 112, 138, 66, 108, 175, 95, 47, 83, 175, 223, 234, 160, 5, 161, 122, 86, 0, 24, 112, 109, 156, 160, 6, 243, 111, 118, 231, 112, 205, 216, 93, 105, 27, 59, 25, 59, 189, 122, 249, 129, 71, 218, 151, 150, 181, 123, 166, 25, 236, 30, 42, 246, 213, 163, 46, 135, 232, 211, 11, 112, 149, 29]);
       const senderKeypair = Keypair.fromSecretKey(senderSecretKey);
@@ -83,21 +89,19 @@ const ContactsDetailScreen: React.FC<ContactDetailProps> = ({ route, navigation 
       await connection.confirmTransaction(signature, 'finalized');
       setTransactionSignature(signature);
 
-      await connection.confirmTransaction(signature, 'finalized');
-      setTransactionSignature(signature);
-      
-      // Home tab'ine yönlendir ve işlem imzasını parametre olarak gönder
       navigation.navigate('TransactionDetailScreen', {
-        transactionId: signature, // Pass the signature as the transactionId
+        transactionId: signature,
       });
 
-
-      Alert.alert("Success", `Transaction successful with signature: ${signature}`);
-    } catch (error: any) {
+      // Alert.alert("Success", `Transaction successful with signature: ${signature}`);
+    } catch (error) {
       console.error('Transaction error:', error);
       Alert.alert("Error", `Transaction failed: ${error.message}`);
+    } finally {
+      setIsLoading(false); // Ensure loading is stopped regardless of the outcome
     }
   };
+  
 
   const handleSendSolScreen = async () => {
     setSendModalVisible(true);
@@ -108,7 +112,7 @@ const ContactsDetailScreen: React.FC<ContactDetailProps> = ({ route, navigation 
   // }
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={styles.container} pointerEvents={isLoading ? 'none' : 'auto'}>
       <View>
         <Image
           style={styles.backgroundImage}
@@ -133,7 +137,7 @@ const ContactsDetailScreen: React.FC<ContactDetailProps> = ({ route, navigation 
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             {isAddressSaved && (
               <>
-                <Image source={require('../assets/solana.webp')} style={styles.solanaIcon} />
+                <Image source={require('../assets/check-circle-2.png')} style={styles.solanaIcon} />
                 <Text style={styles.walletAddressText} numberOfLines={1}>
                   {newSolanaAddress}
                 </Text>
@@ -174,11 +178,14 @@ const ContactsDetailScreen: React.FC<ContactDetailProps> = ({ route, navigation 
         </View>
       </Modal>
       <Modal
-        animationType="slide"
-        transparent={true}
-        visible={sendModalVisible}
-        onRequestClose={() => setSendModalVisible(false)}
-      >
+  animationType="slide"
+  transparent={true}
+  visible={sendModalVisible && !isLoading} // Modal is visible only if sendModalVisible is true and isLoading is false
+  onRequestClose={() => {
+    // Optionally, you can also stop loading here if needed
+    setSendModalVisible(false);
+  }}
+>
         <View style={styles.modalBackground}>
           <View style={styles.modalContent}>
             <TouchableOpacity style={styles.closeButton} onPress={() => setSendModalVisible(false)}>
@@ -204,7 +211,7 @@ const ContactsDetailScreen: React.FC<ContactDetailProps> = ({ route, navigation 
       <View style={styles.bottomButtonsContainer}>
         <TouchableOpacity
           style={[styles.saveButton, isAddressSaved ? styles.activeButton : styles.inactiveButton]}
-          onPress={isAddressSaved ? handleSendSolScreen : null}
+          onPressIn={isAddressSaved ? handleSendSolScreen : null}
           disabled={!isAddressSaved}
         >
           <Text style={styles.saveButtonText}>Pay</Text>
@@ -217,7 +224,13 @@ const ContactsDetailScreen: React.FC<ContactDetailProps> = ({ route, navigation 
           <Text style={styles.saveButtonText}>...</Text>
         </TouchableOpacity>
       </View>
+      {isLoading && (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#000" />
+      </View>
+    )}
     </ScrollView>
+     
   );
 };
 
@@ -234,7 +247,24 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   container: {
+    flex: 1, // Ensure that the container occupies the entire screen
     backgroundColor: '#fff',
+  },
+  loadingContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'white', // Set background color to white
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: 'black',
   },
   name: {
     fontSize: 28,
@@ -355,7 +385,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     width: '100%',
-    backgroundColor: "#6420AA",
+    backgroundColor: "#7E49FF",
     borderRadius: 10,
   },
   modalTitle: {
@@ -408,7 +438,7 @@ const styles = StyleSheet.create({
     width: 18,
     height: 18,
     marginRight: 5,
-    marginLeft: 27.5,
+    marginLeft: 30,
     marginTop: 30
   },
   walletAddress: {
@@ -449,7 +479,7 @@ const styles = StyleSheet.create({
     height: 15,
   },
   activeButton: {
-    backgroundColor: '#6420AA',
+    backgroundColor: '#7E49FF',
   },
   inactiveButton: {
     backgroundColor: '#ccc',

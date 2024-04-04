@@ -15,84 +15,77 @@ const TransactionDetailScreen: React.FC = () => {
   const { transactionId } = route.params;
 
   return (
-    <View style={styles.title_container}>
-      <View style={styles.border}>
+    <View style={styles.container}>
+      <View style={styles.titleContainer}>
         <Image source={require('../assets/check-circle.png')} style={styles.icon} />
         <Text style={styles.title}>Transaction Complete</Text>
       </View>
-      <View style={styles.id_container}>
-        <Text style={{fontSize:15,fontWeight:"bold",marginTop:12}}>Transaction ID:</Text>
-      <Text style={styles.transactionId}>{transactionId}</Text>
+      <View style={styles.idContainer}>
+        <Text style={styles.transactionIdLabel}>Transaction ID</Text>
+        <Text style={styles.transactionId}>{transactionId}</Text>
       </View>
-      <View style={styles.button_container}>
       <TouchableOpacity style={styles.button} onPress={() => { /* Implement view in explorer */ }}>
-          <Text style={styles.buttonText}>View in Explorer</Text>
-          </TouchableOpacity>
-      </View>
+        <Text style={styles.buttonText}>View in Explorer</Text>
+      </TouchableOpacity>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  title_container: {
+  container: {
     flex: 1,
-    // justifyContent: 'center',
-    // alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-  },
-  id_container:{
-    flex: 1,
-    // justifyContent: 'center',
-    // alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-    marginHorizontal:10
-  },
-  border: {
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     alignItems: 'center',
-    borderColor: '#ddd',
-    borderWidth: 1,
-    paddingVertical: 40,
-    paddingHorizontal: 20,
-    borderRadius: 10,
+    backgroundColor: '#fff',
+    paddingTop: 30,
+  },
+  titleContainer: {
+    alignItems: 'center',
+    marginBottom: 40,
   },
   icon: {
-    width: 125, // Ekran görüntüsüne göre ayarla
-    height: 125, // Ekran görüntüsüne göre ayarla
-    marginBottom: 8, // Ekran görüntüsüne göre ayarla
+    width: 100,
+    height: 100,
+    marginBottom: 8,
   },
   title: {
-    fontSize: 24, 
-    color:"black",
+    fontSize: 24,
+    color: 'black',
     fontWeight: 'bold',
+  },
+  idContainer: {
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    borderRadius: 10,
     marginBottom: 20,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.1)', // 10% opacity
+  },
+  transactionIdLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    color:"black"
   },
   transactionId: {
     fontSize: 12,
     color: '#333',
-    marginBottom: 20,
-  },
-  button_container:{
-    flex:1,
-    alignItems:"center",
-    justifyContent:"center",
-    marginBottom:100,
-    padding:10,
+    marginBottom: 8,
   },
   button: {
     backgroundColor: '#fff',
-    padding: 8,
-    marginBottom:270,
-    width:'50%',
-    height:50,
-    alignItems:"center",
-    justifyContent:"center",
-    borderWidth:0.6,
-    borderRadius:18
+    padding: 10,
+    width: '40%',
+    alignItems: 'center',
+    borderWidth: 0.6,
+    borderRadius: 15,
   },
   buttonText: {
     color: 'black',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '500',
   },
 });

@@ -56,7 +56,7 @@ const TabNavigator = () => {
           }
 
 
-          return <Image source={iconSource} style={{ width: 24, height: 24, tintColor: focused ? 'blue' : 'gray' }} />;
+          return <Image source={iconSource} style={{ width: 24, height: 24, tintColor: focused ? 'black' : 'gray' }} />;
         },
         tabBarLabel: ({ focused, color }) => {
           let label;
@@ -70,7 +70,7 @@ const TabNavigator = () => {
           } else if (route.name === 'Favorites') {
             label = "Favorites";
           }
-          return <Text style={{ fontSize: 15, fontWeight: "bold", color: focused ? 'blue' : 'gray' }}>{label}</Text>;
+          return <Text style={{ fontSize: 15, fontWeight: "bold", color: focused ? 'black' : 'gray' }}>{label}</Text>;
         },
       })}
       tabBarOptions={{
